@@ -28,7 +28,7 @@ def includeme(config):
 )
 def json_info_view(context, request):
     baseurl = URL(request.application_url).asdir()
-    version = context.stage.get_latest_version(context.project, stable=True)
+    version = context.stage.get_latest_version(context.project)
     info = get_mutable_deepcopy(context.stage.get_versiondata(context.project, version))
     if not info:
         abort(request, 404, 'no info found')
