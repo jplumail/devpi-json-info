@@ -35,6 +35,8 @@ def json_info_view(context, request):
     if not info:
         abort(request, 404, 'no info found')
     info.pop("+elinks", None)
+    if "project_urls" in info:
+        info["project_urls"] = dict([tuple(url.split(', ')) for url in info["project_urls"]])
     result = dict(info=info, releases={}, urls=[])
     for release in stage.get_releaselinks(context.project):
         release_url = baseurl.joinpath(release.relpath)
