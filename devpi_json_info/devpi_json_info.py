@@ -1,3 +1,4 @@
+from devpi_common.metadata import get_pyversion_filetype
 from devpi_common.url import URL
 from devpi_server.views import abort
 from devpi_server.readonly import get_mutable_deepcopy
@@ -28,14 +29,26 @@ def includeme(config):
 )
 def json_info_view(context, request):
     baseurl = URL(request.application_url).asdir()
-    version = context.stage.get_latest_version(context.project)
-    info = get_mutable_deepcopy(context.stage.get_versiondata(context.project, version))
+    stage = context.stage
+    version = stage.get_latest_version(context.project)
+    info = get_mutable_deepcopy(stage.get_versiondata(context.project, version))
     if not info:
         abort(request, 404, 'no info found')
     info.pop("+elinks", None)
-    result = dict(info=info, releases={})
-    for release in context.stage.get_releaselinks(context.project):
+    result = dict(info=info, releases={}, urls=[])
+    for release in stage.get_releaselinks(context.project):
+        release_url = baseurl.joinpath(release.relpath)
         result["releases"].setdefault(release.version, []).append(
-            dict(url=baseurl.joinpath(release.relpath).url)
+            dict(url=release_url.url)
+        )
+        _, filetype = get_pyversion_filetype(release_url.basename)
+        hash_type, hash = release.hash_spec.split("=")
+        result["urls"].append(
+            dict(
+                url=release_url.url,
+                packagetype=filetype,
+                filename=release_url.basename,
+                digests={hash_type: hash}
+            )
         )
     return result
